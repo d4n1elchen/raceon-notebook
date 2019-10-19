@@ -1,0 +1,15 @@
+pid:
+    kp: 5000
+    ki: 100
+    kd: 800
+camera:
+    framerate: 15
+vision:
+    centerOffset: 0
+    scaneLine: 190
+    peakThres: 150
+    trackWidth: 540
+motor:
+    speed: 200000
+run:
+    time: 10
