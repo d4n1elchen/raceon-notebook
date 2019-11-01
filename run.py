@@ -94,4 +94,4 @@ if LOG_FRAME:
 if LOG_CYCLE_TIME:
     plotCycleTime(t_hist, "plot", FRAMERATE, fname="cycle_time")
 if LOG_SCAN_LINE:
-    np.save('scan_hist.npy', np.array(scan_hist))
+    np.save('analysis/scan_hist.npy', np.array(scan_hist))
