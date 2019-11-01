@@ -1,15 +1,25 @@
 pid:
-    kp: 5000
-    ki: 100
+    kp: 3000
+    ki: 50
     kd: 800
 camera:
-    framerate: 15
+    resolution: [640, 480]
+    framerate: 20
 vision:
     centerOffset: 0
-    scaneLine: 190
+    scaneLine: 200
     peakThres: 150
     trackWidth: 540
+    undistort:
+        enable: true
+        K: [[315.7567614147568, 0.0, 325.2083937909489], [0.0, 314.863821615827, 236.03070258095818], [0.0, 0.0, 1.0]]
+        D: [[0.013587199812888646], [-0.14484457345521587], [0.17909595106791984], [-0.08317093662848575]]
+        paramFile: "undistort_params.pkl"
 motor:
-    speed: 200000
+    speed: 180000
 run:
-    time: 10
+    time: 20
+logging:
+    frame: true
+    cycleTime: true
+    scanLine: true
