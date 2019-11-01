@@ -7,7 +7,7 @@ camera:
     framerate: 20
 vision:
     centerOffset: 0
-    scaneLine: 200
+    scaneLine: 180
     peakThres: 150
     trackWidth: 540
     undistort:
@@ -16,9 +16,10 @@ vision:
         D: [[0.013587199812888646], [-0.14484457345521587], [0.17909595106791984], [-0.08317093662848575]]
         paramFile: "undistort_params.pkl"
 motor:
-    speed: 180000
+    speed: 200000
+    speedMin: 150000
 run:
-    time: 20
+    time: 40
 logging:
     frame: true
     cycleTime: true

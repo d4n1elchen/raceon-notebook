@@ -10,7 +10,7 @@ input("Press Enter to continue ...")
 ti = t = time.time()
 
 pid = PID.PID(Kp, Ki, Kd)
-pid.SetPoint = 0
+pid.SetPoint = CAMERA_CENTER
 #pid.setSampleTime(1/camera.framerate)
 
 # start car

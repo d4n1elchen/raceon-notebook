@@ -48,6 +48,7 @@ with open(PARAM_FILE, "rb") as f:
 
 # Motor params
 SPEED = param['motor']['speed']
+SPEED_MIN = param['motor']['speedMin']
 
 # Run timer
 RUN_TIMER = param['run']['time']
@@ -79,7 +80,7 @@ servo.enable = True
 
 # Enable motor
 MOTOR_BRAKE = 1000000
-DECREASE_MAX = SPEED - 150000
+DECREASE_MAX = SPEED - SPEED_MIN
 
 motor = PWM(0)
 motor.period = 20000000
@@ -143,18 +144,16 @@ def findLinePos(I, line_pos=None, undistort_enable=False, scan_hist=None):
         line_pos   = (line_left + line_right) // 2
         
     elif line_left and not line_right:
-        line_pos   = line_left + TRACK_WIDTH // 2
+        line_pos   = line_left + int(TRACK_WIDTH / 1)
         
     elif not line_left and line_right:
-        line_pos   = line_right - TRACK_WIDTH // 2
+        line_pos   = line_right - int(TRACK_WIDTH / 1)
         
     else:
         if line_pos == None:
             line_pos = CAMERA_CENTER
         print(">>>> no line <<<<")
         print("Current pos = ", line_pos, ", peaks = ", peaks)
-    
-    line_pos = line_pos - CAMERA_CENTER
     
     return line_pos
 
