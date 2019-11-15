@@ -127,3 +127,11 @@ class PID:
         Based on a pre-determined sampe time, the PID decides if it should compute or return immediately.
         """
         self.sample_time = sample_time
+
+    def getState(self):
+        """Get current state"""
+        return (self.PTerm, self.ITerm, self.DTerm, self.last_error)
+    
+    def setState(self, state):
+        """Set current state"""
+        self.PTerm, self.ITerm, self.DTerm, self.last_error = state

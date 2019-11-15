@@ -5,6 +5,7 @@ import cv2
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from picamera.array import PiYUVArray, PiRGBArray
 from picamera import PiCamera
 from pwm import PWM
@@ -25,9 +26,18 @@ pprint(param)
 
 ### Load parameters
 # PID
-Kp = param['pid']['kp']
-Ki = param['pid']['ki']
-Kd = param['pid']['kd']
+Kp_straight = param['pid']['straight']['kp']
+Ki_straight = param['pid']['straight']['ki']
+Kd_straight = param['pid']['straight']['kd']
+Kp_turn = param['pid']['turn']['kp']
+Ki_turn = param['pid']['turn']['ki']
+Kd_turn = param['pid']['turn']['kd']
+USE_STATE = param['pid']['state']['enable']
+SAVE_STATE = param['pid']['state']['save']
+STATE_FILE = param['pid']['state']['file']
+if USE_STATE:
+    with open(STATE_FILE, "rb") as f:
+        PID_STATE = pickle.load(f)
 
 # Camera settings
 RESOLUTION = tuple(param['camera']['resolution'])
@@ -57,6 +67,8 @@ RUN_TIMER = param['run']['time']
 LOG_FRAME = param['logging']['frame']
 LOG_CYCLE_TIME = param['logging']['cycleTime']
 LOG_SCAN_LINE = param['logging']['scanLine']
+LOG_LINE_POS = param['logging']['linePos']
+
 
 ### Initialize components
 # Camera
@@ -104,9 +116,14 @@ def servoLimit(DUTY_CYCLE):
 
 # Decrease speed when turning
 def decreaseSpeedPos(line_pos):
-    return int(DECREASE_MAX * np.tanh(abs(line_pos) / CAMERA_CENTER))
+    return int(DECREASE_MAX * decreaseCurve((line_pos - CAMERA_CENTER) / CAMERA_CENTER))
 def decreaseSpeedDuty(DUTY_CYCLE):
-    return int(DECREASE_MAX * abs(DUTY_CYCLE - SERVO_MIDDLE) / SERVO_MIDDLE)
+    return int(DECREASE_MAX * decreaseCurve((DUTY_CYCLE - SERVO_MIDDLE) / SERVO_MIDDLE))
+def sigmoid(x):
+    return 1/(1 + np.exp(-x))
+def decreaseCurve(x):
+    #return np.maximum(0.0, np.tanh((abs(x)-0.05)*16))
+    return sigmoid((abs(x)-0.07)*203)
 
 # Get line_pos
 def findLinePos(I, line_pos=None, undistort_enable=False, scan_hist=None):
@@ -125,14 +142,14 @@ def findLinePos(I, line_pos=None, undistort_enable=False, scan_hist=None):
         scan_hist.append(Lf)
 
     # Find peaks which are higher than 0.5
-    p = find_peaks(Lf, height=PEAK_THRES)
-    
-    peaks = p[0]
+    peaks, p_val = find_peaks(Lf, height=PEAK_THRES)
     
     line_left   = None
     line_right  = None
-    peaks_left  = peaks[peaks < CAMERA_CENTER]
-    peaks_right = peaks[peaks > CAMERA_CENTER]
+    peaks_left  = peaks[peaks < line_pos]
+    peaks_right = peaks[peaks > line_pos]
+    
+    state = 0
 
     if peaks_left.size:
         line_left = peaks_left[-1]
@@ -141,21 +158,27 @@ def findLinePos(I, line_pos=None, undistort_enable=False, scan_hist=None):
         line_right = peaks_right[0]
         
     if line_left and line_right:
+        print(">>>> 2 lines <<<<")
         line_pos   = (line_left + line_right) // 2
+        print("Current pos = {:f}, Left = {:f}, Right = {:f}".format(line_pos, line_left, line_right))
         
     elif line_left and not line_right:
-        line_pos   = line_left + int(TRACK_WIDTH / 1)
+        print(">>>> only left <<<<")
+        line_pos   = line_left + int(TRACK_WIDTH / 2)
+        print("Current pos = {:f}, Left = {:f}".format(line_pos, line_left))
+        state = 1
         
     elif not line_left and line_right:
-        line_pos   = line_right - int(TRACK_WIDTH / 1)
+        print(">>>> only right <<<<")
+        line_pos   = line_right - int(TRACK_WIDTH / 2)
+        print("Current pos = {:f}, Right = {:f}".format(line_pos, line_right))
+        state = 1
         
     else:
-        if line_pos == None:
-            line_pos = CAMERA_CENTER
         print(">>>> no line <<<<")
-        print("Current pos = ", line_pos, ", peaks = ", peaks)
+        print("Current pos = {:f}, peaks = {:s}, p_val = {:s}".format(line_pos, str(peaks), str(p_val['peak_heights'])))
     
-    return line_pos
+    return line_pos, state
 
 # Undistor
 DIM = RESOLUTION
@@ -179,6 +202,19 @@ def plotCycleTime(t_hist, di, framerate, fname="cycle_time"):
     fig = plt.figure()
     plt.hist(t, bins=10)
     plt.title(f"framerate = {framerate}, min_rate = {1/t.max():.2f}, max_rate = {1/t.min():.2f}")
+    fig.savefig(f"{di}/{fname}.png")
+
+# Plot histogram of cycle time
+def plotPos(pos_hist, di, fname="line_pos"):
+    pos_hist = (np.array(pos_hist) - CAMERA_CENTER) / CAMERA_CENTER
+    print("=== (Line pos - CAMERA_CENTER) / CAMERA_CENTER ===")
+    print("Avg = {:.2f}, Min = {:.2f}, Max = {:.2f}".format(pos_hist.mean(), pos_hist.min(), pos_hist.max()))
+    fig, ax1 = plt.subplots()
+    ax1.plot(pos_hist)
+    ax1.set_title("Line Position")
+    ax1.set_ylim(-0.2, 0.2)
+    ax2 = ax1.twinx()
+    ax2.plot(decreaseCurve(pos_hist), color='r')
     fig.savefig(f"{di}/{fname}.png")
 
 print("Config has been loaded!")

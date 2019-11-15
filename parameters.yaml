@@ -1,26 +1,36 @@
 pid:
-    kp: 3000
-    ki: 50
-    kd: 800
+    straight:
+        kp: 3000
+        ki: 100
+        kd: 100
+    turn:
+        kp: 7000
+        ki: 100
+        kd: 600
+    state:
+        enable: true
+        save: false
+        file: "pid_state_1113_2057.pkl"
 camera:
     resolution: [640, 480]
-    framerate: 20
+    framerate: 18
 vision:
     centerOffset: 0
     scaneLine: 180
-    peakThres: 150
-    trackWidth: 540
+    peakThres: 170
+    trackWidth: 500
     undistort:
         enable: true
         K: [[315.7567614147568, 0.0, 325.2083937909489], [0.0, 314.863821615827, 236.03070258095818], [0.0, 0.0, 1.0]]
         D: [[0.013587199812888646], [-0.14484457345521587], [0.17909595106791984], [-0.08317093662848575]]
         paramFile: "undistort_params.pkl"
 motor:
-    speed: 200000
-    speedMin: 150000
+    speed: 380000
+    speedMin: 230000
 run:
-    time: 40
+    time: 10
 logging:
     frame: true
-    cycleTime: true
-    scanLine: true
+    cycleTime: false
+    scanLine: false
+    linePos: true
